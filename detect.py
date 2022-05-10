@@ -207,7 +207,7 @@ def run(
     if update:
         strip_optimizer(weights)  # update model (to fix SourceChangeWarning)
 
-    return im0
+    return im0.tolist()
 
 
 def parse_opt(arg_string=None):
