@@ -24,6 +24,12 @@ Usage - formats:
                                          yolov5s_edgetpu.tflite     # TensorFlow Edge TPU
 """
 
+from utils.torch_utils import select_device, time_sync
+from utils.plots import Annotator, colors, save_one_box
+from utils.general import (LOGGER, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
+                           increment_path, non_max_suppression, print_args, scale_coords, strip_optimizer, xyxy2xywh)
+from utils.datasets import IMG_FORMATS, VID_FORMATS, LoadImages, LoadStreams
+from models.common import DetectMultiBackend
 import argparse
 import os
 import sys
@@ -37,13 +43,6 @@ ROOT = FILE.parents[0]  # YOLOv5 root directory
 if str(ROOT) not in sys.path:
     sys.path.append(str(ROOT))  # add ROOT to PATH
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
-
-from models.common import DetectMultiBackend
-from utils.datasets import IMG_FORMATS, VID_FORMATS, LoadImages, LoadStreams
-from utils.general import (LOGGER, check_file, check_img_size, check_imshow, check_requirements, colorstr, cv2,
-                           increment_path, non_max_suppression, print_args, scale_coords, strip_optimizer, xyxy2xywh)
-from utils.plots import Annotator, colors, save_one_box
-from utils.torch_utils import select_device, time_sync
 
 
 @torch.no_grad()
@@ -207,8 +206,10 @@ def run(
     if update:
         strip_optimizer(weights)  # update model (to fix SourceChangeWarning)
 
+    return im0
 
-def parse_opt():
+
+def parse_opt(arg_string=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', nargs='+', type=str, default=ROOT / 'yolov5s.pt', help='model path(s)')
     parser.add_argument('--source', type=str, default=ROOT / 'data/images', help='file/dir/URL/glob, 0 for webcam')
@@ -236,7 +237,7 @@ def parse_opt():
     parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     parser.add_argument('--dnn', action='store_true', help='use OpenCV DNN for ONNX inference')
-    opt = parser.parse_args()
+    opt = parser.parse_args() if not arg_string else parser.parse_args(arg_string.split())
     opt.imgsz *= 2 if len(opt.imgsz) == 1 else 1  # expand
     print_args(vars(opt))
     return opt
@@ -250,3 +251,9 @@ def main(opt):
 if __name__ == "__main__":
     opt = parse_opt()
     main(opt)
+
+
+def get_result(args_string):
+    opt = parse_opt(args_string)
+    check_requirements(exclude=('tensorboard', 'thop'))
+    return run(**vars(opt))
